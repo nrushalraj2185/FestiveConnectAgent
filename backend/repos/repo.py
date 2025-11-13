@@ -28,12 +28,12 @@ class Repo:
                 INSERT INTO {TABLE_NAME} (id, title, date, location, performers, description)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (
-                event.id,
-                event.title,
-                event.date,
-                event.location,
-                ",".join(event.performers),
-                event.description
+                event["id"],
+                event["title"],
+                event["date"],
+                event ["location"],
+                ",".join(event ["performers"]),
+                event ["description"]
             ))
             await db.commit()
 
@@ -79,12 +79,12 @@ class Repo:
                 SET title = ?, date = ?, location = ?, performers = ?, description = ?
                 WHERE id = ?
             """, (
-                event.title,
-                event.date,
-                event.location,
-                ",".join(event.performers),
-                event.description,
-                event.id
+                event[title],
+                event[date],
+                event[location],
+                ",".join(event[performers]),
+                event[description],
+                event[id]
             ))
             await db.commit()
             return cursor.rowcount > 0

@@ -1,6 +1,6 @@
 // API Service configuration
 const API_CONFIG = {
-  baseURL: "https://8080-kode-ws-049033f1d.hebbale.academy", // Configure the relavant backend url
+  baseURL: "https://8080-kode-ws-5058ae409.hebbale.academy", // Configure the relavant backend url
   headers: {
     "Content-Type": "application/json",
   },
