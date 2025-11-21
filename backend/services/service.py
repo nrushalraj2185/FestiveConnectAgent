@@ -1,10 +1,33 @@
-from typing import List
+from typing import List, Union, Any, Optional
 from fastapi import HTTPException
 from models.data_models import Event
 from repos.repo import Repo
 from uuid import uuid4
 from datetime import datetime, timedelta
 from collections import Counter
+
+EventLike = Union[Event, dict]
+
+def _event_field(event: EventLike, field: str, default: Any = None):
+    if isinstance(event, dict):
+        return event.get(field, default)
+    return getattr(event, field, default)
+
+def _event_dict(event: EventLike) -> dict:
+    if isinstance(event, dict):
+        return event
+    return event.dict()
+
+def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except Exception:
+        try:
+            return datetime.strptime(value.strip().split()[0], "%Y-%m-%d")
+        except Exception:
+            return None
 
 class Service:
     def __init__(self, repo: Repo):
@@ -14,22 +37,24 @@ class Service:
     # CRUD OPERATIONS
     # -----------------------------------------------------
 
-    async def create_event(self, event: Event):
+    async def create_event(self, event: Event) -> Event:
         """Create a new event"""
         await self.repo.init_db()
 
         event_data = event.dict() if hasattr(event, "dict") else dict(event)
 
         # Add unique ID and created_at timestamp
-        event_data["id"] = event_data.get("id", str(uuid4()))
-        event_data["created_at"] = event_data.get("created_at", datetime.now().isoformat())
+        event_data["id"] = event_data.get("id") or str(uuid4())
+        timestamp = datetime.now().isoformat()
+        event_data["created_at"] = event_data.get("created_at") or timestamp
+        event_data["updated_at"] = event_data.get("updated_at") or timestamp
 
         existing = await self.repo.get(event_data["id"])
         if existing:
             raise HTTPException(status_code=409, detail="Event already exists")
 
         await self.repo.insert(event_data)
-        return event_data
+        return Event(**event_data)
 
     async def get_all_events(self) -> List[Event]:
         """Return all events"""
@@ -44,15 +69,16 @@ class Service:
             raise HTTPException(status_code=404, detail="Event not found")
         return event
 
-    async def update_event(self, event_id: str, event: Event):
+    async def update_event(self, event_id: str, event: Event) -> Event:
         """Update existing event"""
         await self.repo.init_db()
         event_data = event.dict() if hasattr(event, "dict") else dict(event)
         event_data["id"] = event_id
+        event_data["updated_at"] = datetime.now().isoformat()
         updated = await self.repo.update(event_data)
         if not updated:
             raise HTTPException(status_code=404, detail="Event not found to update")
-        return event_data
+        return Event(**event_data)
 
     async def delete_event(self, event_id: str):
         """Delete event"""
@@ -78,11 +104,17 @@ class Service:
 
         monthly = []
         for e in events:
-            date_str = e.get("date") or e.get("event_date") or e.get("created_at")
+            date_str = (
+                _event_field(e, "date")
+                or _event_field(e, "event_date")
+                or _event_field(e, "created_at")
+            )
             if not date_str:
                 continue
             try:
-                d = datetime.fromisoformat(date_str)
+                d = _parse_datetime(date_str)
+                if not d:
+                    continue
                 if d.month == now.month and d.year == now.year:
                     monthly.append(e)
             except Exception:
@@ -92,7 +124,11 @@ class Service:
     async def get_city_with_most_events(self) -> dict:
         await self.repo.init_db()
         events = await self.repo.list()
-        cities = [e.get("city") or e.get("location") for e in events if e.get("city") or e.get("location")]
+        cities = [
+            _event_field(e, "city") or _event_field(e, "location")
+            for e in events
+            if _event_field(e, "city") or _event_field(e, "location")
+        ]
         if not cities:
             return {"city": None, "count": 0}
         city, count = Counter(cities).most_common(1)[0]
@@ -101,7 +137,15 @@ class Service:
     async def get_top_performer(self) -> dict:
         await self.repo.init_db()
         events = await self.repo.list()
-        performers = [e.get("performer") or e.get("artist") for e in events if e.get("performer") or e.get("artist")]
+        performers = []
+        for e in events:
+            perf_list = _event_field(e, "performers") or []
+            if isinstance(perf_list, (list, tuple, set)):
+                performers.extend(p.strip() for p in perf_list if p)
+                continue
+            performer = _event_field(e, "performer") or _event_field(e, "artist")
+            if performer:
+                performers.append(performer.strip())
         if not performers:
             return {"performer": None, "count": 0}
         performer, count = Counter(performers).most_common(1)[0]
@@ -116,27 +160,27 @@ class Service:
 
         def parse_date(e):
             for key in ["created_at", "date", "event_date"]:
-                try:
-                    if e.get(key):
-                        return datetime.fromisoformat(e[key])
-                except Exception:
-                    continue
+                dt = _parse_datetime(_event_field(e, key))
+                if dt:
+                    return dt
             return datetime.min
 
         most_recent = max(events, key=parse_date)
-        return most_recent
+        return _event_dict(most_recent)
 
-    async def get_recent_events_15_days(self) -> List[Event]:
-        """List all events created in last 15 days"""
+    async def get_recent_events_15_days(self, days: int = 15) -> List[Event]:
+        """List all events created in the last `days` days (default 15)."""
         await self.repo.init_db()
         events = await self.repo.list()
-        cutoff = datetime.now() - timedelta(days=15)
+        cutoff = datetime.now() - timedelta(days=days)
 
         recent = []
         for e in events:
             for key in ["created_at", "date", "event_date"]:
                 try:
-                    if e.get(key) and datetime.fromisoformat(e[key]) >= cutoff:
+                    value = _event_field(e, key)
+                    dt = _parse_datetime(value)
+                    if dt and dt >= cutoff:
                         recent.append(e)
                         break
                 except Exception:
@@ -153,8 +197,11 @@ class Service:
         for e in events:
             for key in ["date", "event_date"]:
                 try:
-                    if e.get(key) and datetime.fromisoformat(e[key]) < now:
-                        past_locations.append(e.get("location") or e.get("city"))
+                    dt = _parse_datetime(_event_field(e, key))
+                    if dt and dt < now:
+                        past_locations.append(
+                            _event_field(e, "location") or _event_field(e, "city")
+                        )
                         break
                 except Exception:
                     continue

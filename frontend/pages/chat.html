@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Chat — Web App</title>
+    <title>Chat — Festive Connect Agent</title>
     <link rel="stylesheet" href="../styles/main.css" />
     <link rel="stylesheet" href="../styles/chat.css" />
     <!-- Font Awesome (CDN) -->
@@ -13,12 +13,33 @@
     />
   </head>
   <body>
-    <header>
-      <h1>Welcome to My Web App</h1>
+    <div class="chat-orb chat-orb-one"></div>
+    <div class="chat-orb chat-orb-two"></div>
+    <header class="site-header chat-header">
+      <div class="brand">
+        <div class="logo-badge">
+          <svg class="logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" fill="url(#logoGradient)" opacity="0.9"/>
+            <path d="M20 30 L28 38 L40 22" stroke="#0b0715" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#ff8fd6;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#7c5dff;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="spark"></div>
+          <div class="logo-glow"></div>
+        </div>
+        <div>
+          <p class="brand-title">Festive Connect Agent</p>
+          <p class="brand-subtitle">Converse. Audit. Celebrate.</p>
+        </div>
+      </div>
       <nav>
         <ul>
           <li>
-            <a href="../index.html"><i class="fa fa-home"></i> Home</a>
+            <a href="../index.html"><i class="fa fa-home"></i> Back to Home</a>
           </li>
         </ul>
       </nav>

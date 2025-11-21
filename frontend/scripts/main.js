@@ -4,6 +4,7 @@ const eventListEl = document.getElementById("eventList");
 const addEventBtn = document.getElementById("addEventBtn");
 const modal = document.getElementById("eventModal");
 const closeModalBtn = document.getElementById("closeModalBtn");
+const closeModalBtnSecondary = document.getElementById("closeModalBtnSecondary");
 const eventForm = document.getElementById("eventForm");
 const modalTitle = document.getElementById("modalTitle");
 const sortSelect = document.getElementById("sortSelect");
@@ -49,6 +50,9 @@ async function customConfirm(message) {
 
 addEventBtn.addEventListener("click", () => openModal());
 closeModalBtn.addEventListener("click", () => closeModal());
+if (closeModalBtnSecondary) {
+  closeModalBtnSecondary.addEventListener("click", () => closeModal());
+}
 sortSelect.addEventListener("change", () => loadEvents());
 
 eventForm.addEventListener("submit", async (e) => {

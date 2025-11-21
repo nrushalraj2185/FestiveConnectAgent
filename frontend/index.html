@@ -3,8 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>FestiveConnectAgent</title>
+    <title>Festive Connect Agent</title>
 
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
@@ -13,52 +26,155 @@
   </head>
 
   <body>
-    <header>
-      <h1><i class="fa-solid"></i> FestiveConnectAgent</h1>
-      <nav>
-        <ul>
-          <li><a href="#">Home</a></li>
-          <li><a href="./pages/chat.html">Chat</a></li>
-        </ul>
-      </nav>
-    </header>
+    <div class="aurora"></div>
+    <div class="orb orb-one"></div>
+    <div class="orb orb-two"></div>
 
-    <main>
-      <div class="events-header">
-        <h2>Festival Schedule</h2>
-        <div class="header-actions">
-          <select id="sortSelect" title="Sort events">
-            <option value="date_asc">Sort: Date ▲</option>
-            <option value="date_desc">Sort: Date ▼</option>
-          </select>
-          <button class="btn" id="addEventBtn">
-            <i class="fa-solid fa-plus"></i> Add Event
-          </button>
+    <div class="app-shell">
+      <header class="site-header">
+        <div class="brand">
+          <div class="logo-badge">
+            <svg class="logo-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="30" cy="30" r="28" fill="url(#logoGradient)" opacity="0.9"/>
+              <path d="M20 30 L28 38 L40 22" stroke="#0b0715" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#ff8fd6;stop-opacity:1" />
+                  <stop offset="100%" style="stop-color:#7c5dff;stop-opacity:1" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="spark"></div>
+            <div class="logo-glow"></div>
+          </div>
+          <div>
+            <p class="brand-title">Festive Connect Agent</p>
+            <p class="brand-subtitle">Conversational event intelligence</p>
+          </div>
         </div>
-      </div>
+        <nav>
+          <ul>
+            <li><a href="#" class="active">Home</a></li>
+            <li><a href="./pages/chat.html">Chat Console</a></li>
+          </ul>
+        </nav>
+      </header>
 
-      <section id="eventList" class="event-list">
-        <p>Loading events...</p>
-      </section>
-    </main>
+      <main>
+        <section class="hero">
+          <div class="hero-text">
+            <p class="eyebrow">✨ Festival operating system</p>
+            <h1>Plan lineups, audit schedules, and chat with an AI host.</h1>
+            <p class="lead">
+              Every cultural celebration, tour, and pop-up lives here. Create events, ask analytics, and let the
+              Festive Connect Agent orchestrate the perfect season.
+            </p>
+            <div class="hero-cta">
+              <a class="btn primary" href="./pages/chat.html">
+                <i class="fa-solid fa-message-sparkles"></i>
+                Chat with Festive Agent
+              </a>
+              <a class="btn subtle" href="#eventList">
+                <i class="fa-solid fa-play"></i>
+                View live schedule
+              </a>
+            </div>
+            <div class="hero-stats">
+              <article>
+                <p class="stat-value">24</p>
+                <p class="stat-label">Cities celebrating</p>
+              </article>
+              <article>
+                <p class="stat-value">120+</p>
+                <p class="stat-label">Booked performers</p>
+              </article>
+              <article>
+                <p class="stat-value">4.8 ★</p>
+                <p class="stat-label">Crowd delight index</p>
+              </article>
+            </div>
+          </div>
+          <div class="hero-card">
+            <p class="pulse">Agent is live</p>
+            <h3>Next up: Neon Kite Nights</h3>
+            <p class="hero-card-meta">
+              <i class="fa-solid fa-clock"></i>
+              Tonight · 7:30 PM · Bangalore
+            </p>
+            <p class="hero-card-note">
+              “Bring the sky to life with artisan kites, indie pop, and
+              locally curated cuisine.”
+            </p>
+            <a href="./pages/chat.html" class="btn glass">
+              Ask the agent to personalize
+              <i class="fa-solid fa-arrow-right-long"></i>
+            </a>
+          </div>
+        </section>
 
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Live Control Center</p>
+              <h2>Festival Schedule</h2>
+            </div>
+            <div class="header-actions">
+              <label class="select-wrapper">
+                <i class="fa-solid fa-calendar"></i>
+                <select id="sortSelect" title="Sort events">
+                  <option value="date_asc">Sort: Date ↑</option>
+                  <option value="date_desc">Sort: Date ↓</option>
+                </select>
+              </label>
+              <button class="btn accent" id="addEventBtn">
+                <i class="fa-solid fa-plus"></i>
+                Add Event
+              </button>
+            </div>
+          </div>
+
+          <section id="eventList" class="event-list">
+            <p>Loading events...</p>
+          </section>
+        </section>
+      </main>
+
+      <footer>
+        <p>© <span id="year"></span> Festive Connect. Built for TechFest_775.</p>
+        <div class="footer-links">
+          <a href="./pages/chat.html">Agent Console</a>
+          <a href="https://developers.google.com/adk" target="_blank" rel="noreferrer">About Google ADK</a>
+        </div>
+      </footer>
+    </div>
 
     <!-- Modal -->
     <div id="eventModal" class="modal" aria-hidden="true">
       <div class="modal-content" role="dialog" aria-modal="true">
-        <h3 id="modalTitle">Add New Event</h3>
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">Event composer</p>
+            <h3 id="modalTitle">Add New Event</h3>
+          </div>
+          <button type="button" class="btn icon ghost" id="closeModalBtn" aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
         <form id="eventForm">
           <div class="form-group">
             <label for="title">Event Title</label>
             <input type="text" id="title" name="title" required />
           </div>
-          <div class="form-group">
-            <label for="date">Date & Time</label>
-            <input type="datetime-local" id="date" name="date" required />
-          </div>
-          <div class="form-group">
-            <label for="location">Location (venue)</label>
-            <input type="text" id="location" name="location" required />
+          <div class="form-group split">
+            <div>
+              <label for="date">Date & Time</label>
+              <input type="datetime-local" id="date" name="date" required />
+            </div>
+            <div>
+              <label for="location">Location (venue)</label>
+              <input type="text" id="location" name="location" required />
+            </div>
           </div>
           <div class="form-group">
             <label for="performers">Performers / Lineup</label>
@@ -70,13 +186,19 @@
           </div>
 
           <div class="modal-actions">
-            <button type="submit" class="btn">Save</button>
-            <button type="button" class="btn ghost" id="closeModalBtn">Cancel</button>
+            <button type="button" class="btn ghost" id="closeModalBtnSecondary">Cancel</button>
+            <button type="submit" class="btn primary">
+              <i class="fa-solid fa-floppy-disk"></i>
+              Save Event
+            </button>
           </div>
         </form>
       </div>
     </div>
 
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
     <script type="module" src="./scripts/main.js"></script>
   </body>
 </html>

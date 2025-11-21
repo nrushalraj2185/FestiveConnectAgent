@@ -2,7 +2,7 @@ import os
 import uvicorn
 from google.adk.cli.fast_api import get_fast_api_app
 from services.service import Service
-from routers import events
+from routers import events, organizers
 from repos.repo import Repo
 from constants import DB_NAME
 
@@ -35,6 +35,7 @@ app = get_fast_api_app(
 )
 
 app.include_router(events.router, prefix="/events", tags=["Events"])
+app.include_router(organizers.router, prefix="/organizers", tags=["Organizers"])
 
 if __name__ == "__main__":
     # Use the PORT environment variable provided by Cloud Run, defaulting to 8080
