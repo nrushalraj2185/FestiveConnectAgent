@@ -1,9 +1,7 @@
 // API Service configuration
 const API_CONFIG = {
-  baseURL: "http://localhost:8080", // Configure the relavant backend url
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: "http://localhost:8080",
+  headers: { "Content-Type": "application/json" },
 };
 
 // Utility function to handle API responses
