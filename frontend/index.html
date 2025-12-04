@@ -74,10 +74,10 @@
                 <i class="fa-solid fa-message-sparkles"></i>
                 Chat with Festive Agent
               </a>
-              <a class="btn subtle" href="#eventList">
-                <i class="fa-solid fa-play"></i>
-                View live schedule
-              </a>
+              <button class="btn accent" id="addEventBtnHero" title="Add a new event">
+                <i class="fa-solid fa-plus"></i>
+                Add Event
+              </button>
             </div>
             <div class="hero-stats">
               <article>
@@ -94,21 +94,9 @@
               </article>
             </div>
           </div>
-          <div class="hero-card">
-            <p class="pulse">Agent is live</p>
-            <h3>Next up: Neon Kite Nights</h3>
-            <p class="hero-card-meta">
-              <i class="fa-solid fa-clock"></i>
-              Tonight · 7:30 PM · Bangalore
-            </p>
-            <p class="hero-card-note">
-              “Bring the sky to life with artisan kites, indie pop, and
-              locally curated cuisine.”
-            </p>
-            <a href="./pages/chat.html" class="btn glass">
-              Ask the agent to personalize
-              <i class="fa-solid fa-arrow-right-long"></i>
-            </a>
+
+          <div class="hero-card" id="heroCard">
+            <p class="pulse">Loading events...</p>
           </div>
         </section>
 

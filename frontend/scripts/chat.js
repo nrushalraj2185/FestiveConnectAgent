@@ -1,25 +1,66 @@
 import ApiService from "../services/apiService.js";
-const AgentName = "agent";
+// Match the backend agent name from `backend/constants.py`
+const AgentName = "festive_agent";
 let activeSessionId = "";
+
+// DOM elements will be assigned after DOMContentLoaded to avoid null refs
+let messagesEl;
+let form;
+let input;
+let sendBtn;
+let fileInput;
+let uploadList;
+let sessionsListWrapper;
+let filePreview;
 
 document.addEventListener("DOMContentLoaded", () => {
   initChat();
 });
 
 function initChat() {
+  // Query DOM elements now that document is loaded
+  messagesEl = document.getElementById("messages");
+  form = document.getElementById("chat-form");
+  input = document.getElementById("message-input");
+  sendBtn = document.getElementById("send-btn");
+  fileInput = document.getElementById("file-input");
+  uploadList = document.getElementById("upload-list");
+  sessionsListWrapper = document.getElementById("sessions-list");
+
   const newSessionButton = document.getElementById("new-session");
-  newSessionButton.addEventListener("click", createSession);
+  if (newSessionButton) newSessionButton.addEventListener("click", createSession);
+  const exportSessionsBtn = document.getElementById("exportSessionsBtn");
+  const clearSessionsBtn = document.getElementById("clearSessionsBtn");
+  if (exportSessionsBtn) exportSessionsBtn.addEventListener("click", exportAllStoredSessions);
+  if (clearSessionsBtn) clearSessionsBtn.addEventListener("click", clearAllStoredSessions);
+
+  // Create and insert filePreview element
+  filePreview = document.createElement("div");
+  filePreview.className = "file-preview";
+  if (form) form.insertBefore(filePreview, form.firstChild);
+
+  // Attach other event listeners
+  if (fileInput) {
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        currentFile = file;
+        showFilePreview(file);
+      }
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input ? input.value.trim() : "";
+      if (input) input.value = "";
+      await sendMessage(text, currentFile);
+    });
+  }
+
   listSessions();
 }
-
-// DOM elements
-const messagesEl = document.getElementById("messages");
-const form = document.getElementById("chat-form");
-const input = document.getElementById("message-input");
-const sendBtn = document.getElementById("send-btn");
-const fileInput = document.getElementById("file-input");
-const uploadList = document.getElementById("upload-list");
-const sessionsListWrapper = document.getElementById("sessions-list");
 
 function listSessions() {
   ApiService.get(`/apps/${AgentName}/users/user/sessions`)
@@ -27,7 +68,10 @@ function listSessions() {
       if (sessions.length) {
         activeSessionId = sessions[0].id;
         for (let i = 0; i < sessions.length; i++) {
-          createSessionElement(sessions[i].id);
+          const sid = sessions[i].id;
+          // Ensure stored session exists in localStorage
+          ensureStoredSession(sid);
+          createSessionElement(sid);
         }
       }
     })
@@ -38,14 +82,23 @@ function createSessionElement(id) {
   const li = document.createElement("li");
   li.setAttribute("id", `id-${id}`);
   li.setAttribute("class", "session-item");
+  const exportIcon = document.createElement("i");
+  exportIcon.setAttribute("class", "fa fa-file-export export-session");
+  exportIcon.setAttribute("title", "Export session");
+  exportIcon.onclick = (event) => { event.stopPropagation(); exportStoredSession(id); };
+
   const deleteIcon = document.createElement("i");
   deleteIcon.setAttribute("class", "fa fa-trash delete-session");
   deleteIcon.onclick = (event) => deleteSession(event, id);
   const spanEl = document.createElement("span");
   spanEl.innerHTML = id;
+
+  // Append to DOM first to ensure updateActiveSession can query it
+  if (sessionsListWrapper) sessionsListWrapper.appendChild(li);
+
   if (activeSessionId === id) {
     const existingSessions =
-      sessionsListWrapper.querySelectorAll(".session-item");
+      sessionsListWrapper ? sessionsListWrapper.querySelectorAll(".session-item") : [];
     if (existingSessions.length) {
       for (let j = 0; j < existingSessions.length; j++) {
         existingSessions[j].classList.remove("active");
@@ -56,14 +109,16 @@ function createSessionElement(id) {
   }
   li.onclick = () => updateActiveSession(id);
   li.appendChild(spanEl);
+  li.appendChild(exportIcon);
   li.appendChild(deleteIcon);
-  sessionsListWrapper.appendChild(li);
 }
 
 function createSession() {
   ApiService.post(`/apps/${AgentName}/users/user/sessions`)
     .then((session) => {
       activeSessionId = session.id;
+      // Initialize storage for this session and render
+      ensureStoredSession(session.id, true);
       createSessionElement(session.id);
     })
     .catch((error) => console.error(error));
@@ -77,12 +132,98 @@ function deleteSession(event, id) {
       const wasActive = session.classList.contains("active");
       if (wasActive) {
         const firstSession = document.querySelector(".session-item");
-        firstSession.classList.add("active");
-        activeSession = firstSession.getAttribute("id");
+        if (firstSession) {
+          firstSession.classList.add("active");
+          activeSessionId = firstSession.getAttribute("id");
+        } else {
+          activeSessionId = "";
+        }
       }
+      // remove DOM element
       session.parentNode.removeChild(session);
+      // remove stored session from localStorage as well
+      try {
+        const key = storedKey(id);
+        localStorage.removeItem(key);
+      } catch (e) {
+        console.warn('Failed to remove stored session:', e);
+      }
     })
     .catch((error) => console.error(error));
+}
+
+// Export a single stored session to a downloadable JSON file
+function exportStoredSession(sessionId) {
+  try {
+    const stored = loadStoredSession(sessionId);
+    if (!stored) {
+      alert('No stored data for this session.');
+      return;
+    }
+    const blob = new Blob([JSON.stringify(stored, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `festive_session_${sessionId}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error('Export failed:', e);
+    alert('Failed to export session. See console for details.');
+  }
+}
+
+// Export all stored sessions as a single JSON file (map of id->object)
+function exportAllStoredSessions() {
+  try {
+    const all = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('festive_session_')) {
+        try { all[key] = JSON.parse(localStorage.getItem(key)); } catch { all[key] = localStorage.getItem(key); }
+      }
+    }
+    if (!Object.keys(all).length) {
+      alert('No stored sessions found in localStorage.');
+      return;
+    }
+    const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `festive_sessions_export_${new Date().toISOString()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error('Export all failed:', e);
+    alert('Failed to export sessions. See console for details.');
+  }
+}
+
+// Clear all local stored sessions after confirmation
+async function clearAllStoredSessions() {
+  const ok = confirm('This will remove all locally stored chat sessions. This cannot be undone. Continue?');
+  if (!ok) return;
+  try {
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('festive_session_')) toRemove.push(key);
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
+    // Clear session list UI items as well
+    const list = sessionsListWrapper;
+    if (list) list.innerHTML = '';
+    activeSessionId = '';
+    alert('Local sessions cleared.');
+  } catch (e) {
+    console.error('Failed to clear stored sessions:', e);
+    alert('Failed to clear stored sessions. See console for details.');
+  }
 }
 
 function updateActiveSession(id) {
@@ -99,7 +240,15 @@ function updateActiveSession(id) {
       activeSessionId = id;
       listEl.classList.add("active");
       messagesEl.innerHTML = "";
-      renderEvents(sessionResponse.events);
+      // Render historical events from server + stored conversation
+      renderEvents(sessionResponse.events || []);
+      const stored = loadStoredSession(id);
+      if (stored && stored.messages && stored.messages.length) {
+        // Append stored conversation after server events
+        for (const m of stored.messages) {
+          appendMessage(m.content, m.who);
+        }
+      }
     })
     .catch((error) => console.error(error));
 }
@@ -141,7 +290,51 @@ function appendMessage(content, who = "model") {
   }
   messagesEl.appendChild(el);
   messagesEl.scrollTop = messagesEl.scrollHeight;
+  // Persist message to local storage if a session is active
+  try {
+    if (activeSessionId) {
+      const stored = loadStoredSession(activeSessionId) || { id: activeSessionId, createdAt: new Date().toISOString(), messages: [] };
+      stored.messages.push({ who, content });
+      saveStoredSession(activeSessionId, stored);
+    }
+  } catch (e) {
+    console.warn('Failed to persist message:', e);
+  }
   return el;
+}
+
+// -- Local storage helpers for session persistence --
+function storedKey(sessionId) {
+  return `festive_session_${sessionId}`;
+}
+
+function ensureStoredSession(sessionId, createIfMissing = false) {
+  const key = storedKey(sessionId);
+  const v = localStorage.getItem(key);
+  if (!v && createIfMissing) {
+    const obj = { id: sessionId, createdAt: new Date().toISOString(), messages: [] };
+    localStorage.setItem(key, JSON.stringify(obj));
+    return obj;
+  }
+  try {
+    return v ? JSON.parse(v) : null;
+  } catch {
+    return null;
+  }
+}
+
+function loadStoredSession(sessionId) {
+  const key = storedKey(sessionId);
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredSession(sessionId, obj) {
+  const key = storedKey(sessionId);
+  localStorage.setItem(key, JSON.stringify(obj));
 }
 
 function createMediaElement({ data, mimeType, displayName }) {
@@ -173,9 +366,7 @@ function setSending(isSending) {
 
 // File handling
 let currentFile = null;
-const filePreview = document.createElement("div");
-filePreview.className = "file-preview";
-form.insertBefore(filePreview, form.firstChild);
+// `filePreview` is created inside initChat after DOM loads
 
 async function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -273,18 +464,4 @@ async function sendMessage(text, attachedFile = null) {
 }
 
 // File input handler
-fileInput.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    currentFile = file;
-    showFilePreview(file);
-  }
-});
-
-// Form submit
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = input.value.trim();
-  input.value = "";
-  await sendMessage(text, currentFile);
-});
+// Event listeners for file input and form are attached in `initChat`.

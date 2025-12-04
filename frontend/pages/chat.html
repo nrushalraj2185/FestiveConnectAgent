@@ -48,9 +48,17 @@
     <main class="chat-page">
       <aside class="sessions-container">
         <h3 class="session-title">Sessions</h3>
-        <button class="create-session-button" id="new-session">
+        <div class="session-actions-row">
+          <button class="create-session-button" id="new-session">
           <i class="fa fa-plus"></i> New Session
         </button>
+          <button class="btn small" id="exportSessionsBtn" title="Export stored sessions as JSON">
+            <i class="fa fa-file-export"></i>
+          </button>
+          <button class="btn small danger" id="clearSessionsBtn" title="Clear stored sessions from localStorage">
+            <i class="fa fa-trash"></i>
+          </button>
+        </div>
         <ul id="sessions-list" class="sessions-list"></ul>
       </aside>
       <section class="chat-container" aria-label="Chat">
@@ -86,8 +94,8 @@
       </section>
     </main>
 
-    <script type="module" src="../scripts/chat.js"></script>
-    <script type="module" src="../services/apiService.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module" src="../services/apiService.js"></script>
+    <script type="module" src="../scripts/chat.js"></script>
   </body>
 </html>

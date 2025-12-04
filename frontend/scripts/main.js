@@ -2,17 +2,30 @@ import ApiService from "../services/apiService.js";
 
 const eventListEl = document.getElementById("eventList");
 const addEventBtn = document.getElementById("addEventBtn");
+const addEventBtnHero = document.getElementById("addEventBtnHero");
 const modal = document.getElementById("eventModal");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const closeModalBtnSecondary = document.getElementById("closeModalBtnSecondary");
 const eventForm = document.getElementById("eventForm");
 const modalTitle = document.getElementById("modalTitle");
 const sortSelect = document.getElementById("sortSelect");
+const heroCardEl = document.getElementById("heroCard");
 
 let editEventId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!eventListEl) return;
+  
+  // Wire hero "Add Event" button
+  if (addEventBtnHero) {
+    addEventBtnHero.addEventListener("click", () => openModal());
+  }
+  
+  // Wire footer "Add Event" button
+  if (addEventBtn) {
+    addEventBtn.addEventListener("click", () => openModal());
+  }
+  
   loadEvents();
 });
 
@@ -89,9 +102,67 @@ async function loadEvents() {
     eventListEl.innerHTML = `<p>Loading events...</p>`;
     const events = await ApiService.get("/events/");
     renderEvents(events);
+    renderHeroEvent(events);
   } catch (error) {
     console.error("Error loading events:", error);
     eventListEl.innerHTML = `<p class="error-text">⚠️ Failed to load events. Please check the server.</p>`;
+  }
+}
+
+// Render the next upcoming event into the hero card and show a short list of ongoing events
+function renderHeroEvent(events = []) {
+  if (!heroCardEl) return;
+
+  const now = Date.now();
+  // Find upcoming events (date >= now)
+  const upcoming = events
+    .map(e => ({...e, ts: new Date(e.date).getTime()}))
+    .filter(e => !isNaN(e.ts) && e.ts >= now)
+    .sort((a,b) => a.ts - b.ts);
+
+  // Find ongoing (today) events: same day as now
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
+  const ongoing = events
+    .map(e => ({...e, ts: new Date(e.date).getTime()}))
+    .filter(e => !isNaN(e.ts) && e.ts >= startOfDay && e.ts < endOfDay)
+    .sort((a,b) => a.ts - b.ts);
+
+  // If we have an upcoming event, show it prominently; otherwise fallback to original static copy
+  if (upcoming.length) {
+    const next = upcoming[0];
+    heroCardEl.innerHTML = `
+      <p class="pulse">Agent is live</p>
+      <h3>Next up: ${escapeHtml(next.title)}</h3>
+      <p class="hero-card-meta">
+        <i class="fa-solid fa-clock"></i>
+        ${formatDateTime(next.date)} · ${escapeHtml(next.location)}
+      </p>
+      ${next.description ? `<p class="hero-card-note">${escapeHtml(next.description)}</p>` : ""}
+      <a href="./pages/chat.html" class="btn glass">
+        Ask the agent to personalize
+        <i class="fa-solid fa-arrow-right-long"></i>
+      </a>
+    `;
+  }
+
+  // Add a short inline list of today's events at the bottom of hero-card
+  if (ongoing.length) {
+    const listHtml = ongoing.map(ev => `
+      <div class="hero-event-mini">
+        <strong>${escapeHtml(ev.title)}</strong>
+        <div class="mini-meta">${formatDateTime(ev.date)} · ${escapeHtml(ev.location)}</div>
+      </div>
+    `).join('');
+
+    const container = document.createElement('div');
+    container.className = 'hero-events-mini';
+    container.innerHTML = `<h4 class="eyebrow">Ongoing today</h4>${listHtml}`;
+    // avoid duplicate insertion
+    const existing = heroCardEl.querySelector('.hero-events-mini');
+    if (existing) existing.remove();
+    heroCardEl.appendChild(container);
   }
 }
 

@@ -1,6 +1,7 @@
 // API Service configuration
 const API_CONFIG = {
-  baseURL: "http://localhost:8080",
+  // Backend URL including the dev UI prefix required by the ADK runtime
+  baseURL: "http://localhost:8080/dev-ui",
   headers: { "Content-Type": "application/json" },
 };
 
